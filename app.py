@@ -42,7 +42,7 @@ def enviar_email(destinatario, asunto, cuerpo):
 def home():
     if 'usuario' not in session:
         return redirect(url_for('login'))
-    return redirect(url_for('pagina_principal'))
+    return render_template('index.html', usuario=session['usuario'])
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -100,6 +100,49 @@ def mi_perfil():
     user_data = collection.find_one({'usuario': usuario})
     return render_template('mi_perfil.html', usuario=user_data['usuario'], email=user_data['email'])
 
+@app.route('/actualizar_datos', methods=['POST'])
+def actualizar_datos():
+    if 'usuario' not in session:
+        return redirect(url_for('login'))
+    
+    usuario = session['usuario']
+    nuevos_datos = request.form.to_dict()
+    collection.update_one({'usuario': usuario}, {'$set': nuevos_datos})
+    
+    flash("Tus datos han sido actualizados con éxito.", "success")
+    return redirect(url_for('mi_perfil'))
+
+@app.route('/solicitar_prestamo', methods=['GET', 'POST'])
+def solicitar_prestamo():
+    if request.method == 'POST':
+        monto = request.form.get('monto')
+        plazo = request.form.get('plazo')
+
+        # Simulación de guardado
+        print(f"Solicitud recibida: Monto={monto}, Plazo={plazo}")
+
+        flash("Solicitud enviada con éxito.", "success")  # Mensaje de éxito
+        return redirect(url_for('solicitar_prestamo'))  # Redirige después del POST
+
+    return render_template('solicitar_prestamo.html')
+
+
+@app.route('/revision_solicitudes')
+def revision_solicitudes():
+    return render_template('revision_solicitudes.html')
+
+@app.route('/notificaciones_solicitudes')
+def notificaciones_solicitudes():
+    return render_template('notificaciones_solicitudes.html')
+
+@app.route('/realizar_pagos')
+def realizar_pagos():
+    return render_template('realizar_pagos.html')
+
+@app.route('/visualizar_prestamos')
+def visualizar_prestamos():
+    return render_template('visualizar_prestamos.html')
+
 @app.route('/recuperar_contrasena', methods=['GET', 'POST'])
 def recuperar_contrasena():
     if request.method == 'POST':
@@ -123,27 +166,18 @@ def recuperar_contrasena():
 
     return render_template('recuperar_contrasena.html')
 
-@app.route('/restablecer_contrasena/<token>', methods=['GET', 'POST'])
-def restablecer_contrasena(token):
-    try:
-        email = serializer.loads(token, salt='password-reset-salt', max_age=3600)
-    except:
-        flash("El enlace de restablecimiento ha caducado o es inválido.", "error")
-        return redirect(url_for('recuperar_contrasena'))
-
-    if request.method == 'POST':
-        nueva_contrasena = request.form['nueva_contrasena']
-        hashed_password = bcrypt.generate_password_hash(nueva_contrasena).decode('utf-8')
-        collection.update_one({'email': email}, {'$set': {'contrasena': hashed_password}})
-        flash("Tu contraseña ha sido restablecida con éxito.", "success")
-        return redirect(url_for('login'))
-
-    return render_template('restablecer_contrasena.html')
-
 @app.route('/logout')
 def logout():
     session.pop('usuario', None)
     return redirect(url_for('login'))
+
+@app.route('/soporte')
+def soporte():
+    return render_template('soporte.html')
+
+@app.route('/historial')
+def historial():
+    return render_template('historial.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
